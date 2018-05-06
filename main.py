@@ -1,33 +1,39 @@
-import base64
+import csv
 import json
-from datetime import datetime
-import pandas
+from datetime import datetime, timedelta
+
+import requests
 from dateutil.relativedelta import relativedelta
 from khayyam import *
-from pip._vendor import requests
+from requests.auth import HTTPBasicAuth
 
 url = "https://app.trackingtime.co/api/v4/251834/events"
 
-tow_months = datetime.now().today() + relativedelta(months=-2)
+tow_months = datetime.now().today() + relativedelta(days=-1)
 dateStartReport = '{0:%Y-%m-%d}'.format(tow_months)
+# dateStartReport = '{0:%Y-%m-%d}'.format("2018/03/14")
 dateEndReport = '{0:%Y-%m-%d}'.format(datetime.now())
 userId = "304794"
-
-usrPass = '%s:%s' % ('username', 'password')
-base64string = base64.standard_b64encode(usrPass.encode('utf-8'))
-
-headers = {
-    'Authorization': "Basic %s" % base64string.decode('utf-8')
-}
 
 querystring = {"from": dateStartReport, "to": dateEndReport, "filter": "USER", "id": userId, "page": "0",
                "page_size": "2000"}
 
-response = requests.request("GET", url, headers=headers, params=querystring)
+response = requests.get(url, auth=HTTPBasicAuth('---user---', '---pass---'), params=querystring)
 
 data = json.loads(response.text)
+
+
+class WorkClass(object):
+    jDate = ""
+    start = ""
+    end = ""
+    duration = 0
+    date = 0
+    total = 0
+
+
 if data['response']['status'] == 200:
-    timeSheet = []
+    timeSheet = list()
 
     for w in data['data']:
         wStart = datetime.strptime(w['start'], '%Y-%m-%d %H:%M:%S')
@@ -35,21 +41,33 @@ if data['response']['status'] == 200:
         wTimeEnd = datetime.strptime(w['loc_end'], '%m/%d/%Y %I:%M:%S %p')
         jDate = JalaliDatetime(wStart).strftime('%Y-%m-%d')
 
-        work = [
-            # w['id'],
-            jDate,
-            '{0:%I:%M %p}'.format(wTimeStart),
-            '{0:%I:%M %p}'.format(wTimeEnd),
-            w['formated_duration'],
-            '{0:%Y-%m-%d}'.format(wStart),
-            w['duration'],
-        ]
-        timeSheet.append(work)
+        work = WorkClass()
+        work.jDate = jDate
+        work.start = '{0:%I:%M %p}'.format(wTimeStart)
+        work.end = '{0:%I:%M %p}'.format(wTimeEnd)
+        work.duration = w['formated_duration']
+        work.date = '{0:%Y-%m-%d}'.format(wStart)
+        work.total = w['duration']
 
-    column = ['jDate', 'start', 'end', 'duration', 'date', 'total (second)']
+        updated = False
+        if len(timeSheet) == 0:
+            timeSheet.append(work)
+        else:
+            for idx, item in enumerate(timeSheet):
+                if work.date == item.date:
+                    timeSheet[idx].total = timeSheet[idx].total + work.total
+                    timeSheet[idx].duration = str(timedelta(seconds=timeSheet[idx].total))
+                    s = datetime.strptime(timeSheet[idx].start.split(',')[0], '%I:%M %p')
+                    timeSheet[idx].end = '{0:%I:%M %p}'.format((s + timedelta(seconds=timeSheet[idx].total)))
+                    updated = True
+                    break
+            if not updated:
+                timeSheet.append(work)
 
-    df = pandas.DataFrame(timeSheet, columns=['jDate', 'start', 'end', 'duration', 'date', 'time'])
-    df.to_csv('timeSheet.csv', index=False)
-
+    with open('list.csv', 'w', newline='', encoding='utf8') as f:
+        writer = csv.writer(f)
+        writer.writerow(['jDate', 'start', 'end', 'duration', 'date', 'total'])
+        for item in timeSheet:
+            writer.writerow([item.jDate, item.start, item.end, item.duration, item.date, item.total])
 else:
     print(data['response'])
