@@ -9,16 +9,16 @@ from requests.auth import HTTPBasicAuth
 
 url = "https://app.trackingtime.co/api/v4/251834/events"
 
-tow_months = datetime.now().today() + relativedelta(days=-1)
-dateStartReport = '{0:%Y-%m-%d}'.format(tow_months)
-# dateStartReport = '{0:%Y-%m-%d}'.format("2018/03/14")
-dateEndReport = '{0:%Y-%m-%d}'.format(datetime.now())
-userId = "304794"
+tow_months = datetime.now().today() + relativedelta(months=-2)
+
+dateStartReport = '{0:%Y-%m-%d}'.format(tow_months)  # Start date
+dateEndReport = '{0:%Y-%m-%d}'.format(datetime.now())  # End date
+userId = "304794"  # <-- Change this
 
 querystring = {"from": dateStartReport, "to": dateEndReport, "filter": "USER", "id": userId, "page": "0",
                "page_size": "2000"}
 
-response = requests.get(url, auth=HTTPBasicAuth('---user---', '---pass---'), params=querystring)
+response = requests.get(url, auth=HTTPBasicAuth('---user---', '---pass---'), params=querystring)  # <-- Change this
 
 data = json.loads(response.text)
 
@@ -64,7 +64,7 @@ if data['response']['status'] == 200:
             if not updated:
                 timeSheet.append(work)
 
-    with open('list.csv', 'w', newline='', encoding='utf8') as f:
+    with open('export.csv', 'w', newline='', encoding='utf8') as f:
         writer = csv.writer(f)
         writer.writerow(['jDate', 'start', 'end', 'duration', 'date', 'total'])
         for item in timeSheet:
