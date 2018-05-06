@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 import requests
 from dateutil.relativedelta import relativedelta
-from khayyam import *
+from khayyam import JalaliDatetime
 from requests.auth import HTTPBasicAuth
 
 url = "https://app.trackingtime.co/api/v4/251834/events"
