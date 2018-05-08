@@ -7,16 +7,16 @@ from dateutil.relativedelta import relativedelta
 from khayyam import JalaliDatetime
 from requests.auth import HTTPBasicAuth
 
-url = "https://app.trackingtime.co/api/v4/251834/events"
+userId = "304794"  # <-- Change this
+
+url = "https://app.trackingtime.co/api/v4/{0}/events".format(userId)
 
 tow_months = datetime.now().today() + relativedelta(months=-2)
 
 dateStartReport = '{0:%Y-%m-%d}'.format(tow_months)  # Start date
 dateEndReport = '{0:%Y-%m-%d}'.format(datetime.now())  # End date
-userId = "304794"  # <-- Change this
 
-querystring = {"from": dateStartReport, "to": dateEndReport, "filter": "USER", "id": userId, "page": "0",
-               "page_size": "2000"}
+querystring = {"from": dateStartReport, "to": dateEndReport, "page": "0", "page_size": "2000"}
 
 response = requests.get(url, auth=HTTPBasicAuth('---user---', '---pass---'), params=querystring)  # <-- Change this
 
